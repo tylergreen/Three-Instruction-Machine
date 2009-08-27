@@ -1,0 +1,91 @@
+USING: ;
+IN: tim
+
+! *********
+! Primitive Data Types
+
+TUPLE: take n ;
+C: <take> take
+TUPLE: enter addr-mode ;
+C: <enter> enter
+TUPLE: push addr-mode ;
+C: <push> push
+
+TUPLE: arg n ;
+C: <arg> arg
+TUPLE: label name ;
+C: <label> label
+TUPLE: code instr-seq ;
+C: <code> code
+TUPLE: const val ;
+C: <const> const
+
+
+! ********
+! Machine Spec
+
+! cstore (codestore) is analagous to labels from sicp.chp5
+! pc and fp are simpler registers
+TUPLE: tim { pc cons } { fp cons } { stack cons } heap cstore ;
+
+! *******
+
+! ** Next thing to work on 
+GENERIC: mkclosure ( cstore heap fp addr-mode -- fp pc )
+M: mkclosure arg ;
+M: mkclosure code ;
+M: mkclosure label ;
+M: mkclosure const ;
+
+! finish these and make sure they are correct
+GENERIC: step ( machine instr -- machine )
+
+M:: take step ( machine instr -- machine )
+    [let | n [ instr n>> ]
+           stack [ machine stack>> ]
+           heap [ machine heap>> ] |
+        n stack list-length >
+        [ "stack underflow -- TAKE" throw ]
+        [ n stack ltake heap swap falloc ] if
+    ] ;
+
+! make a new closure,  update pc and fp with that new closure   
+M:: enter step ( machine instr -- machine )
+    [let | addr-mode [ instr addr-mode>> ]
+           fp [ machine fp>> ]
+           heap [ machine heap>> ]
+           cstore [ machine cstore>> ] |
+        mk-closure machine swap  [ [ ] [ ] update-fp-pc ]
+    ] ;
+
+! make a new closure and push it on the stack
+M: push step ( machine instr -- machine )
+    ;
+
+    
+! ***********
+
+: run-prog ( string -- string )
+    parse compile eval show-results ;
+
+: full-run ( string -- string )
+    parse compile eval show-full-results ;
+
+
+: show-results ( tim-seq -- string ) ;
+
+! ** 4.2.2 **
+
+    
+
+    
+
+
+    
+    
+
+
+
+
+
+    

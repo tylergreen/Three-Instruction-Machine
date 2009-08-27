@@ -1,0 +1,24 @@
+
+! *************
+! Heap
+! last bastion
+
+TUPLE: heap size { addrs list } { table assoc } ;
+
+: <heap> ( -- heap )
+    0
+    1 lfrom
+    nil
+    heap boa ;
+
+:: halloc ( heap obj -- addr )
+    [let | next [ heap addrs>> car ]
+           free [ heap addrs>> cdr ]
+           table [ heap table>> ] |
+        [ next obj table set-at
+          heap [ 1 + ] change-size
+          heap [ cdr ] change-addrs ] ] ;
+
+: hupdate ( obj addr heap -- ) table>> set-at ;
+
+: hfree ( addr heap -- ) table>> delete-at ;
