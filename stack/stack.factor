@@ -9,8 +9,8 @@ TUPLE: stack s push-count max-depth depth ;
 
 : spush ( elem stack -- stack )
     [ cons ] change-s
-    [ 1+ ] change-push-count 
-    [ 1+ ] change-depth
+    [ 1 + ] change-push-count 
+    [ 1 + ] change-depth
     dup [ max-depth>> ] [ depth>> ] bi max >>max-depth ;
  
 : spop ( stack -- stack elem )
@@ -21,6 +21,6 @@ TUPLE: stack s push-count max-depth depth ;
     ] if ;
 
 : spop-n ( n stack -- popped-seq )
-    dupd swap '[ _ - ] change-depth 
+    over '[ _ - ] change-depth 
     swap '[ _ lcut ] change-s drop ;
 

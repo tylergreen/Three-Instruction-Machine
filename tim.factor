@@ -1,5 +1,6 @@
 USING:
-tim.heap tim.stack utils
+grouping
+tim.heap tim.stack 
 assocs kernel accessors
 sequences locals
 math math.functions
@@ -24,9 +25,9 @@ C: <binop> binop
 TUPLE: unop prim ;
 C: <unop> unop
 
-! TUPLE: cond { conseq instr-seq } { alt instr-seq } ;
-TUPLE: cond conseq alt ;
-C: <cond> cond
+! TUPLE: cond-br { conseq instr-seq } { alt instr-seq } ;
+TUPLE: cond-br conseq alt ;
+C: <cond-br> cond-br
 
 ! *******************
 ! Tim Address Modes
@@ -141,7 +142,7 @@ C: <stat-machine> stat-machine
 GENERIC: >closure ( machine tim-addr -- closure )
 
 M: arg >closure ( machine arg -- closure )
-   nth>> swap [ fp>> heap>> ] fcleave fget ; inline
+    nth>> swap [ fp>> ] [ heap>> ] bi fget ; inline
 
 M: code >closure ( machine code -- closure )
    [ fp>> ] [ instr-seq>> ] bi* <closure> ;
@@ -167,17 +168,15 @@ GENERIC: step ( machine instr -- machine )
 ! lcut here has been meticoulously combed over against the spec: 1 times
 
 ! takes the top n elements off the arg stack, forms a new frame f, and makes the fp point to f
-M: take step ( machine take -- machine )
-    [let   n>> :> n
-           :> m 
-           astack [ m astack>> ]
-           heap [ m heap>> ]  |
-       astack depth>> n <
+M:: take step ( machine take -- machine )
+    [let take n>> :> n
+        machine astack>> :> astack
+        machine heap>> :> heap
+       astack depth>> n <  
        [ n astack s>> list>array [ . ] bi@ "too few args for TAKE instr" throw ]
        [ n astack spop-n
          heap swap falloc
-         m swap >>fp 
-       ]
+         machine swap >>fp ]
    ] if ;
 
 : fetch-closure ( machine addr-mode -- machine closure )
@@ -195,7 +194,7 @@ M: push step ( machine push -- machine )
 ! transistion rules.  I've run into this issue before
 M:: binop step ( machine binop -- machine )
     machine [ vpop ] dup bi swap  ! careful of ordering for primitive
-    binop prim>> call
+    binop prim>> call( x y -- z )
     machine vpush ; inline
 
 ! push the current fp onto the vstack
@@ -206,10 +205,15 @@ M: pushv step ( machine pushv -- machine )
 M: return step ( machine return -- machine )
    drop dup apop load-closure ; inline
 
-M: cond step ( machine cond -- machine )
-    over vpop zero?
-    [ conseq>> ]
-    [ alt>> ] ? change-pc ; inline
+! M: cond-br step ( machine cond-br-branch -- machine )
+!     over vpop zero?
+!     [ conseq>> ]
+!     [ alt>> ] ? change-pc ; inline
+
+M:: cond-br step ( machine cond-br-branch -- machine )
+    machine vpop zero?
+    [ cond-br-branch conseq>> ]
+    [ cond-br-branch alt>> ] if machine swap >>pc  ; inline
 
 : do-admin ( m -- m )
    ;
@@ -218,7 +222,7 @@ M: cond step ( machine cond -- machine )
 ! call the next instr but would this mean more code?
 
 : advance-pc ( machine -- machine instr )
-    [ uncons ] change-pc swap ;
+    [ uncons ] change-pc swap ; inline
 
 ! the treewalker
 ! but generics help flatten the tree from this contol perspective
@@ -253,7 +257,7 @@ TUPLE: supercomb name args body ;
          "x" <evar> <eap> <eap> ]
        [ "+1" { "x" } "+" <evar> "x" <evar> <eap> 1 <enumb> <eap> ]
 
-     } [ call <sc> ] map  ; inline
+     } [ call( -- x y z ) <sc> ] map  ; inline
 
 ! ****************
 ! Compilation Sections
@@ -273,7 +277,7 @@ TUPLE: supercomb name args body ;
 !     1 <arg> <enter>
 !     2 <arg> <enter> 1list
 !     3 <arg> <enter> 1list
-!     <cond> 3list ;
+!     <cond-br> 3list ;
 
 : compiled-prims ( -- seq )
     {  "+" [ + ]
@@ -281,7 +285,7 @@ TUPLE: supercomb name args body ;
        "*" [ * ]
        "/" [ / ]
        "^" [ ^ ]
-     } 2 nsplit [ compile-biprim ] assoc-map ; foldable
+     } 2 group [ compile-biprim ] assoc-map ; foldable
 
 DEFER: compile-r
 
@@ -316,19 +320,17 @@ M: enumb compile-r
 
 ! WANTED: want list>array treewalker aka pretty printer
 
-!  WANTED: destructuring macro 
 :: compile-sc ( env sc -- name/instr-list )
-    [let
-    [ <sc> ] undo :> ( name args body )
+    sc [ <sc> ] undo :> ( name args body )
     args sequence>list 
-        1 lfrom [ <arg> ] lazy-map
-        lzip list>array env append
-        body compile-r
+    1 lfrom [ <arg> ] lazy-map
+    lzip list>array env append
+    body compile-r
+    
+    args length <take>
+    swons
         
-        args length <take>
-        swons
-        
-        name swap 2array ] ;
+    name swap 2array  ;
 
 ! compile a user program into a table of sc's names
 ! and their associated compiled code          
@@ -337,18 +339,16 @@ M: enumb compile-r
     dup [ name>> dup <label> 2array ] map
     compiled-prims [ first dup <label> 2array ] map append
     '[ _ swap compile-sc ] map
-    compiled-prims append
-    ; inline
+    compiled-prims append ; inline
 
-: <pc> ( -- pc ) "main" <label> <enter> 1list ; foldable
-: <fp> ( -- fp ) framenull ; foldable
+: <pc> ( -- pc ) "main" <label> <enter> 1list ; 
+: <fp> ( -- fp ) framenull ; 
           
 : <astack> ( -- stack )
     framenull nil <closure>
-    <stack> spush ; foldable
-
-: <vstack> ( -- vstack ) <stack> ; foldable                 
-: <dump> ( -- dump ) <stack> ; foldable
+    <stack> spush ; 
+: <vstack> ( -- vstack ) <stack> ;                  
+: <dump> ( -- dump ) <stack> ; 
           
 :: compile ( program -- machine )
     <pc>

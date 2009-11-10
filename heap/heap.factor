@@ -18,13 +18,12 @@ SINGLETON: hnull
     heap boa ;
 
 :: halloc ( heap obj -- addr )
-    [let | next [ heap addrs>> car ]
-           free [ heap addrs>> cdr ]
-           table [ heap table>> ] |
-        obj next table set-at
-        heap [ 1 + ] change-size
-        [ uncons ] change-addrs drop
-    ] ;
+    heap addrs>> car :> next
+    heap addrs>> cdr :> free
+    heap table>> :> table
+    obj next table set-at
+    heap [ 1 + ] change-size
+    [ uncons ] change-addrs drop ;
 
 : hupdate ( obj addr heap -- ) table>> set-at ;
 
