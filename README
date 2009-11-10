@@ -1,0 +1,8 @@
+Tyler Green
+tyler.green2@gmail.com
+
+This is an factor implementation of from Simon Peyton Jones' and David
+Lesters' Three Instruction Machine from their book "Implementing
+Functional Languages: a Tutorial"
+
+There are some sample programs in the tim-test.factor file.
