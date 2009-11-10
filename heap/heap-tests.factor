@@ -1,4 +1,3 @@
-USING: ;
+USING: tools.test ;
 IN: tim.heap-tests
 
-[  ] unit-test

@@ -368,30 +368,4 @@ M: enumb compile-r
 : run-prog ( sc-seq -- string )
     compile dup eval vstack>> s>> list>array ; inline
 
-! ***********
-! Sample Programs
-
-: main1 ( -- seq )
-    "main" { }
-    "S" <evar>
-    "K" <evar> <eap>
-    "K" <evar> <eap>
-    200  <enumb> <eap>
-    <sc> 1array ; 
-
-: main2 ( -- seq )
-    "main" { } "I" <evar> 2 <enumb> <eap> <sc> 1array ;
-
-: main3 ( -- seq )
-    "main" { } 100 <enumb> <sc> 1array ;
-
-: main4 ( -- seq )
-    "main" { } "+" <evar> 5 <enumb> <eap> 3 <enumb> <eap> <sc> 1array ;
-
-: main5 ( -- seq )
-    "main" { } "K" <evar> 100 <enumb> <eap> "S" <evar> <eap> <sc> 1array ;
-
-: main6 ( -- seq )
-    "main" { } "+1" <evar> 1001 <enumb> <eap> <sc> 1array ;
-    
 
