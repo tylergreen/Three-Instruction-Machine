@@ -168,8 +168,8 @@ GENERIC: step ( machine instr -- machine )
 
 ! takes the top n elements off the arg stack, forms a new frame f, and makes the fp point to f
 M: take step ( machine take -- machine )
-   [let* | n [ n>> ]
-           m [ ]
+    [let   n>> :> n
+           :> m 
            astack [ m astack>> ]
            heap [ m heap>> ]  |
        astack depth>> n <
@@ -232,7 +232,6 @@ M: cond step ( machine cond -- machine )
 
 TUPLE: supercomb name args body ;
 : <sc> ( n a b -- supercomb ) supercomb boa ;
-
 ! fac is too complicated to do without a parser
 
 ! there is a better way to say this
@@ -319,10 +318,9 @@ M: enumb compile-r
 
 !  WANTED: destructuring macro 
 :: compile-sc ( env sc -- name/instr-list )
-    [let | name [ sc name>> ]
-           args [ sc args>> ]
-           body [ sc body>> ] |
-        args sequence>list 
+    [let
+    [ <sc> ] undo :> ( name args body )
+    args sequence>list 
         1 lfrom [ <arg> ] lazy-map
         lzip list>array env append
         body compile-r
