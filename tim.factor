@@ -169,15 +169,15 @@ GENERIC: step ( machine instr -- machine )
 
 ! takes the top n elements off the arg stack, forms a new frame f, and makes the fp point to f
 M:: take step ( machine take -- machine )
-    [let take n>> :> n
-        machine astack>> :> astack
-        machine heap>> :> heap
-       astack depth>> n <  
-       [ n astack s>> list>array [ . ] bi@ "too few args for TAKE instr" throw ]
-       [ n astack spop-n
-         heap swap falloc
-         machine swap >>fp ]
-   ] if ;
+    take n>> :> n
+    machine astack>> :> astack
+    machine heap>> :> heap
+    astack depth>> n <  
+    [ n astack s>> list>array [ . ] bi@ "too few args for TAKE instr" throw ]
+    [ n astack spop-n
+      heap swap falloc
+      machine swap >>fp 
+    ] if ;
 
 : fetch-closure ( machine addr-mode -- machine closure )
     dupd tim-addr>> >closure ;
